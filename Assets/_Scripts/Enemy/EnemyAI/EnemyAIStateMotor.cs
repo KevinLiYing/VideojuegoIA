@@ -29,6 +29,7 @@ public class EnemyAIStateMotor : MonoBehaviour
         anim = GetComponent<Animator>();
         rb = GetComponent<Rigidbody>();
         m_state = GetComponent<AISeekState>();
+
     }
 
     private void Start()
