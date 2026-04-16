@@ -3,7 +3,7 @@ using UnityEngine;
 
 public class AIBehaviour : MonoBehaviour
 {
-    public float maxSpeed, steeringMaxSpeed = 10.0f;
+    public float maxSpeed, steeringMaxSpeed, stoppingDistance = 10.0f;
     public bool displayVectors = true;
 
     #region Behaviour
@@ -17,7 +17,7 @@ public class AIBehaviour : MonoBehaviour
 
         DisplayVectors(rb.linearVelocity,targetDirection, steeringDirection);
 
-        rb.linearVelocity = FinalVelocity(finalDirection);
+        rb.linearVelocity = FinalVelocity(finalDirection) * Arrive(target);
 
     }
 
@@ -31,8 +31,17 @@ public class AIBehaviour : MonoBehaviour
 
         DisplayVectors(rb.linearVelocity, targetDirection, steeringDirection);
 
-        rb.linearVelocity = FinalVelocity(-finalDirection);
+        rb.linearVelocity = FinalVelocity(finalDirection);
 
+    }
+
+    public float Arrive(Vector3 target)
+    {
+        var sqrDistance = (target - transform.position).sqrMagnitude;
+        if (sqrDistance > Mathf.Pow(stoppingDistance, 2)) return 1;
+
+        // nos devolverá un número entre 1 y 0
+        return (sqrDistance / MathF.Pow(stoppingDistance, 2));
     }
 
     #endregion

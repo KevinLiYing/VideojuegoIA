@@ -9,6 +9,7 @@ public abstract class BaseState : MonoBehaviour/*, ITriggerTarget, ITriggerExita
     private void Awake()
     {
         m_enemyAIStateMotor = GetComponent<EnemyAIStateMotor>();
+        aIBehaviour = GetComponent<AIBehaviour>();
     }
 
     public virtual void Construct() { }
