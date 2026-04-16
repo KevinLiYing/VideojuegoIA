@@ -21,6 +21,20 @@ public class AIBehaviour : MonoBehaviour
 
     }
 
+    public void Flee(Vector3 target, Rigidbody rb)
+    {
+        var targetDirection = - CalculateTargetDirection(target);
+
+        var steeringDirection = CalculateSteeringDirection(targetDirection, rb);
+
+        var finalDirection = CalculateFinalDirection(steeringDirection, rb);
+
+        DisplayVectors(rb.linearVelocity, targetDirection, steeringDirection);
+
+        rb.linearVelocity = FinalVelocity(-finalDirection);
+
+    }
+
     #endregion
 
     #region Calculations
