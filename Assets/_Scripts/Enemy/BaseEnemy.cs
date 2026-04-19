@@ -6,4 +6,12 @@ public class BaseEnemy : Character
     {
         base.Start();
     }
+
+    protected override void OnCharacterContact(Character other)
+    {
+        if (isTagger && !other.isTagger)
+        {
+            other.isTagged = true;
+        }
+    }
 }

@@ -13,7 +13,7 @@ public class AIFleeState : BaseState
 
     public override void Transition()
     {
-        if (m_enemyAIStateMotor.stateEnum == AIState.Flee) return;
+        if (m_enemyAIStateMotor.stateEnum != AIState.Flee) return;
         base.Transition();
     }
 

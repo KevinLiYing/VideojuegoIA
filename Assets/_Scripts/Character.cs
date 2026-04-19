@@ -6,7 +6,7 @@ public class Character : MonoBehaviour
     public float damage = 10f;
 
     public bool isTagger = false;
-    public bool tagged = false;
+    public bool isTagged = false;
 
     protected float currentHealth;
 
@@ -20,10 +20,15 @@ public class Character : MonoBehaviour
         isTagger = value;
     }
 
-    protected virtual void OnTriggerEnter(Collider other)
+    public void SetTagged(bool value)
     {
-        Character c = other.GetComponent<Character>();
+        isTagged = value;
+    }
 
+    protected virtual void OnCollisionEnter(Collision collision)
+    {
+        Character c = collision.gameObject.GetComponent<Character>();
+        //Debug.Log("Hit: " + collision.gameObject.name);
         if (c != null)
         {
             OnCharacterContact(c);
@@ -32,9 +37,12 @@ public class Character : MonoBehaviour
 
     protected virtual void OnCharacterContact(Character other)
     {
-        if (isTagger && !other.isTagger)
+        if (isTagger && !other.isTagged)
         {
-            other.tagged = true;
+            other.SetTagged(true);
+            other.SetTagger(true);
+
+            SetTagger(false);
         }
     }
 }

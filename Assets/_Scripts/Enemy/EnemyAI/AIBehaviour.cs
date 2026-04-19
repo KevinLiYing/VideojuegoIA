@@ -7,21 +7,24 @@ public class AIBehaviour : MonoBehaviour
     public bool displayVectors = true;
 
     #region Behaviour
-    public void Seek(Vector3 target, Rigidbody rb)
+    public virtual void Seek(Vector3 target, Rigidbody rb)
     {
-        var targetDirection = CalculateTargetDirection(target);
+        var distance = Vector3.Distance(transform.position, target);
+
+        float arriveFactor = Arrive(target);
+
+        var targetDirection = CalculateTargetDirection(target) * arriveFactor;
 
         var steeringDirection = CalculateSteeringDirection(targetDirection, rb);
 
         var finalDirection = CalculateFinalDirection(steeringDirection, rb);
 
-        DisplayVectors(rb.linearVelocity,targetDirection, steeringDirection);
+        DisplayVectors(rb.linearVelocity, targetDirection, steeringDirection);
 
-        rb.linearVelocity = FinalVelocity(finalDirection) * Arrive(target);
-
+        rb.linearVelocity = FinalVelocity(finalDirection);
     }
 
-    public void Flee(Vector3 target, Rigidbody rb)
+    public virtual void Flee(Vector3 target, Rigidbody rb)
     {
         var targetDirection = - CalculateTargetDirection(target);
 
@@ -35,24 +38,25 @@ public class AIBehaviour : MonoBehaviour
 
     }
 
-    public float Arrive(Vector3 target)
+    public virtual float Arrive(Vector3 target)
     {
-        var sqrDistance = (target - transform.position).sqrMagnitude;
-        if (sqrDistance > Mathf.Pow(stoppingDistance, 2)) return 1;
+        float distance = Vector3.Distance(transform.position, target);
 
-        // nos devolverá un número entre 1 y 0
-        return (sqrDistance / MathF.Pow(stoppingDistance, 2));
+        if (distance > stoppingDistance)
+            return 1f;
+
+        return Mathf.Clamp01(distance / stoppingDistance);
     }
 
     #endregion
 
     #region Calculations
-    private Vector3 CalculateTargetDirection(Vector3 target)
+    public Vector3 CalculateTargetDirection(Vector3 target)
     {
         return (target - transform.position).normalized * maxSpeed * Time.fixedDeltaTime;
     }
 
-    private Vector3 CalculateSteeringDirection(Vector3 targetDirection, Rigidbody rb)
+    public Vector3 CalculateSteeringDirection(Vector3 targetDirection, Rigidbody rb)
     {
         var steeringDirection = targetDirection - rb.linearVelocity;
 
@@ -61,12 +65,12 @@ public class AIBehaviour : MonoBehaviour
             steeringDirection;
     }
 
-    private Vector3 CalculateFinalDirection(Vector3 steeringDirection, Rigidbody rb)
+    public Vector3 CalculateFinalDirection(Vector3 steeringDirection, Rigidbody rb)
     {
         return rb.linearVelocity + steeringDirection;
     }
 
-    private Vector3 FinalVelocity(Vector3 finalDirection)
+    public Vector3 FinalVelocity(Vector3 finalDirection)
     {
         return finalDirection.sqrMagnitude > Mathf.Pow(maxSpeed, 2) ?
             finalDirection.normalized * maxSpeed :
@@ -74,7 +78,7 @@ public class AIBehaviour : MonoBehaviour
     }
     #endregion
 
-    private void DisplayVectors(Vector3 currentVelocity, Vector3 targetDirection, Vector3 steeringDirection)
+    public void DisplayVectors(Vector3 currentVelocity, Vector3 targetDirection, Vector3 steeringDirection)
     {
         if (!displayVectors) return;
 

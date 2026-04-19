@@ -7,14 +7,13 @@ public class PlayerMovement : MonoBehaviour
 
     private Vector2 moveInput;
     private Rigidbody rb;
-
     private InputSystem controls;
 
     private void Awake()
     {
         controls = new InputSystem();
 
-        controls.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>() * -1;
+        controls.Player.Move.performed += ctx => moveInput = ctx.ReadValue<Vector2>() * -1f;
         controls.Player.Move.canceled += ctx => moveInput = Vector2.zero;
     }
 
@@ -31,17 +30,18 @@ public class PlayerMovement : MonoBehaviour
     private void Start()
     {
         rb = GetComponent<Rigidbody>();
+
+        rb.isKinematic = false;
+        rb.collisionDetectionMode = CollisionDetectionMode.ContinuousDynamic;
+        rb.interpolation = RigidbodyInterpolation.Interpolate;
     }
 
     private void FixedUpdate()
     {
-        float moveAmount = moveInput.y;
-        Vector3 move = transform.forward * moveAmount * moveSpeed * Time.fixedDeltaTime;
-        rb.MovePosition(rb.position + move);
+        Vector3 move = transform.forward * moveInput.y * moveSpeed;
+        rb.linearVelocity = new Vector3(move.x, rb.linearVelocity.y, move.z);
 
-        float turnAmount = moveInput.x;
-        float turn = turnAmount * turnSpeed * Time.fixedDeltaTime * -1;
-        Quaternion rotation = Quaternion.Euler(0f, turn, 0f);
-        rb.MoveRotation(rb.rotation * rotation);
+        float turn = moveInput.x * turnSpeed * Mathf.Deg2Rad * -1;
+        rb.angularVelocity = new Vector3(0f, turn, 0f);
     }
 }

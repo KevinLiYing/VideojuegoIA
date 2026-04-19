@@ -14,7 +14,7 @@ public class AISeekState : BaseState
 
     public override void Transition()
     {
-        if (m_enemyAIStateMotor.stateEnum == AIState.Seek) return;
+        if (m_enemyAIStateMotor.stateEnum != AIState.Seek) return;
         base.Transition();
     }
 
