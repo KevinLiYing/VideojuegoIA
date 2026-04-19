@@ -4,8 +4,9 @@ public class Character : MonoBehaviour
 {
     public float maxHealth = 100f;
     public float damage = 10f;
-    public bool tagged = false;
+
     public bool isTagger = false;
+    public bool tagged = false;
 
     protected float currentHealth;
 
@@ -14,43 +15,26 @@ public class Character : MonoBehaviour
         currentHealth = maxHealth;
     }
 
-    public virtual void DealDamage(Character target)
+    public void SetTagger(bool value)
     {
-        if (target == null) return;
-        target.TakeDamage(damage, this);
+        isTagger = value;
     }
 
-    public virtual void TakeDamage(float amount, Character attacker)
+    protected virtual void OnTriggerEnter(Collider other)
     {
-        currentHealth -= amount;
+        Character c = other.GetComponent<Character>();
 
-        if (currentHealth <= 0f)
+        if (c != null)
         {
-            Die();
-        }
-    }
-
-    protected virtual void Die()
-    {
-        Destroy(gameObject);
-    }
-
-    protected virtual void OnCollisionEnter(Collision collision)
-    {
-        Character other = collision.gameObject.GetComponent<Character>();
-
-        if (other != null)
-        {
-            OnCharacterContact(other);
+            OnCharacterContact(c);
         }
     }
 
     protected virtual void OnCharacterContact(Character other)
     {
-    }
-
-    public Character GetCharacterFromCollision(Collision collision)
-    {
-        return collision.gameObject.GetComponent<Character>();
+        if (isTagger && !other.isTagger)
+        {
+            other.tagged = true;
+        }
     }
 }
