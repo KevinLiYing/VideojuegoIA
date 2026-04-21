@@ -26,6 +26,18 @@ public abstract class BaseState : MonoBehaviour/*, ITriggerTarget, ITriggerExita
             case AIState.Seek:
                 m_enemyAIStateMotor.ChangeState(GetComponent<AISeekState>());
                 break;
+            case AIState.Pursue:
+                m_enemyAIStateMotor.ChangeState(GetComponent<AIPursuitState>());
+                break;
+            case AIState.Evade:
+                m_enemyAIStateMotor.ChangeState(GetComponent<AIEvadeState>());
+                break;
+            case AIState.FollowPath:
+                m_enemyAIStateMotor.ChangeState(GetComponent<AIPursuitState>());
+                break;
+            case AIState.Wander:
+                m_enemyAIStateMotor.ChangeState(GetComponent<AIWanderState>());
+                break;
         }
     }
 

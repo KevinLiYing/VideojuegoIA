@@ -12,14 +12,13 @@ public class TaunterAI : AIBehaviour
 
     public float detectionRange = 20f;
 
-    public Transform player;
-
     public override void Flee(Vector3 target, Rigidbody rb)
     {
         float distance = Vector3.Distance(transform.position, target);
 
         float t = Mathf.InverseLerp(detectionRange, 0f, distance);
 
+        // aplicamos modificadores de velocidad
         float speedMul = Mathf.Lerp(farSpeedMultiplier, closeSpeedMultiplier, t);
         float steerMul = Mathf.Lerp(farSteeringMultiplier, closeSteeringMultiplier, t);
 
@@ -39,6 +38,7 @@ public class TaunterAI : AIBehaviour
 
         rb.linearVelocity = FinalVelocity(finalDirection);
 
+        // hacemos los cambios
         maxSpeed = originalMaxSpeed;
         steeringMaxSpeed = originalSteering;
     }

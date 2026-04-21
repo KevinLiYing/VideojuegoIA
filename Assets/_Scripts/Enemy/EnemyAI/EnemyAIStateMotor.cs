@@ -4,7 +4,11 @@ using UnityEngine;
 public enum AIState
 {
     Flee,
-    Seek
+    Seek,
+    Pursue,
+    Evade,
+    FollowPath,
+    Wander
 }
 
 [RequireComponent(typeof(AIPatrolState),typeof(AIIdleState),typeof(AISeekState))]
@@ -19,7 +23,8 @@ public class EnemyAIStateMotor : MonoBehaviour
     //public FPSPlayer player;
     public Transform target;
     public bool isPlayerOnSight, isIdleDone;
-    public Rigidbody rb;
+    public Rigidbody rb, targetRb;
+    
 
     private BaseState m_state;
 
@@ -34,6 +39,7 @@ public class EnemyAIStateMotor : MonoBehaviour
 
     private void Start()
     {
+        targetRb = target.GetComponent<Rigidbody>();
         m_state.Construct();
     }
 
