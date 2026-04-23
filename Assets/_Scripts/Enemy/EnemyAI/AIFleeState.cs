@@ -7,19 +7,19 @@ public class AIFleeState : BaseState
 
     public override void Construct()
     {
-        aIBehaviour.maxSpeed = fleeMaxSpeed;
-        aIBehaviour.steeringMaxSpeed = steeringMaxSpeed;
+        aiBehaviour.maxSpeed = fleeMaxSpeed;
+        aiBehaviour.steeringMaxSpeed = steeringMaxSpeed;
     }
 
     public override void Transition()
     {
-        if (m_enemyAIStateMotor.stateEnum != AIState.Flee) return;
-        base.Transition();
+        if(m_enemyAIStateMotor.stateEnum == AIState.Flee) return;
+            base.Transition();
     }
 
     public override void FixedUpdateState()
     {
-        aIBehaviour.Flee(m_enemyAIStateMotor.target.position, m_enemyAIStateMotor.rb);
+        aiBehaviour.Flee(m_enemyAIStateMotor.target.position, m_enemyAIStateMotor.rb);
     }
 }
 

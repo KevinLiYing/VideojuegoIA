@@ -5,26 +5,30 @@ public enum AIState
 {
     Flee,
     Seek,
-    Pursue,
     Evade,
+    Pursue,
     FollowPath,
     Wander
 }
 
 [RequireComponent(typeof(AIPatrolState),typeof(AIIdleState),typeof(AISeekState))]
 [RequireComponent(typeof(AIFleeState),typeof(Rigidbody),typeof(Animator))]
+[RequireComponent(typeof(AIEvadeState),typeof(AIPursuitState),typeof(AIWanderState))]
+[RequireComponent(typeof(AIFollowPathState), typeof(AIBehaviour))]
 public class EnemyAIStateMotor : MonoBehaviour
 {
     [Header("State")] 
     public AIState stateEnum;
-    
+    [Header("AI Components")]
     public Animator anim;
+    public Rigidbody rb;
     //public EnemyAIBehaviour enemyBehaviour;
     //public FPSPlayer player;
+    [Header("Target Components")]
     public Transform target;
+    public Rigidbody targetRb;
+    [Header("Booleans")]
     public bool isPlayerOnSight, isIdleDone;
-    public Rigidbody rb, targetRb;
-    
 
     private BaseState m_state;
 
@@ -34,7 +38,6 @@ public class EnemyAIStateMotor : MonoBehaviour
         anim = GetComponent<Animator>();
         rb = GetComponent<Rigidbody>();
         m_state = GetComponent<AISeekState>();
-
     }
 
     private void Start()

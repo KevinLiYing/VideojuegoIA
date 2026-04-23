@@ -1,25 +1,25 @@
 using UnityEngine;
 
-public class AIEvadeState : BaseState
+public class AIFollowPathState : BaseState
 {
-    [SerializeField] private float evadeMaxSpeed;
+    [SerializeField] private float followMaxSpeed;
     [SerializeField] private float steeringMaxSpeed;
 
     public override void Construct()
     {
-        aiBehaviour.maxSpeed = evadeMaxSpeed;
+        aiBehaviour.maxSpeed = followMaxSpeed;
         aiBehaviour.steeringMaxSpeed = steeringMaxSpeed;
     }
 
     public override void FixedUpdateState()
     {
-        aiBehaviour.Evade(m_enemyAIStateMotor.target.position, m_enemyAIStateMotor.rb, m_enemyAIStateMotor.targetRb);
+        aiBehaviour.FollowPath(m_enemyAIStateMotor.rb);
     }
 
 
     public override void Transition()
     {
-        if (m_enemyAIStateMotor.stateEnum != AIState.Evade) return;
+        if (m_enemyAIStateMotor.stateEnum != AIState.FollowPath) return;
         base.Transition();
     }
 }

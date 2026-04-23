@@ -7,13 +7,13 @@ public class AIWanderState : BaseState
 
     public override void Construct()
     {
-        aIBehaviour.maxSpeed = wanderMaxSpeed;
-        aIBehaviour.steeringMaxSpeed = steeringMaxSpeed;
+        aiBehaviour.maxSpeed = wanderMaxSpeed;
+        aiBehaviour.steeringMaxSpeed = steeringMaxSpeed;
     }
 
     public override void FixedUpdateState()
     {
-        aIBehaviour.Evade(m_enemyAIStateMotor.target.position, m_enemyAIStateMotor.rb, m_enemyAIStateMotor.targetRb);
+        aiBehaviour.Evade(m_enemyAIStateMotor.target.position, m_enemyAIStateMotor.rb, m_enemyAIStateMotor.targetRb);
     }
 
 

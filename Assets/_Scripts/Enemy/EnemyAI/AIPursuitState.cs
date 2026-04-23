@@ -7,8 +7,8 @@ public class AIPursuitState : BaseState
 
     public override void Construct()
     {
-        aIBehaviour.maxSpeed = pursueMaxSpeed;
-        aIBehaviour.steeringMaxSpeed = steeringMaxSpeed;
+        aiBehaviour.maxSpeed = pursueMaxSpeed;
+        aiBehaviour.steeringMaxSpeed = steeringMaxSpeed;
     }
 
     public override void Transition()
@@ -19,6 +19,6 @@ public class AIPursuitState : BaseState
 
     public override void FixedUpdateState()
     {
-        aIBehaviour.Pursue(m_enemyAIStateMotor.target.position, m_enemyAIStateMotor.rb, m_enemyAIStateMotor.targetRb);
+        aiBehaviour.Pursue(m_enemyAIStateMotor.target.position, m_enemyAIStateMotor.rb, m_enemyAIStateMotor.targetRb);
     }
 }

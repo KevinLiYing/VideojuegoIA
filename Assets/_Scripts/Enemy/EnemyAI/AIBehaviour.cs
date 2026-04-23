@@ -1,11 +1,26 @@
 using System;
+using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
 public class AIBehaviour : MonoBehaviour
 {
+    [SerializeField] private PathRoutesSO pathRoutes;
+    [SerializeField] private PatrolRoute patrolRoute;
     public float maxSpeed, steeringMaxSpeed, stoppingDistance = 10.0f;
     public bool displayVectors = true;
+
+    private List<Transform> pathPoints;
+    private int currentRouteIndex;
+    private float sqrRemainingDistance;
+    private bool pathPending;
+
+
+    private void Start()
+    {
+        if (pathRoutes == null) return;
+        SetNewRoute(pathRoutes);
+    }
 
     #region Behaviour
     public virtual void Seek(Vector3 target, Rigidbody rb)
@@ -95,7 +110,16 @@ public class AIBehaviour : MonoBehaviour
         rb.linearVelocity = FinalVelocity(finalDirection);
     }
 
-
+    public void FollowPath(Rigidbody rb)
+    {
+        var target = pathPoints[currentRouteIndex].position;
+        if (CheckNextPoint())
+        {
+            pathPending = false;
+            target = setNextRoutePoint();
+        }
+        Seek(target, rb);
+    }
 
     public virtual float Arrive(Vector3 target)
     {
@@ -107,6 +131,33 @@ public class AIBehaviour : MonoBehaviour
         return Mathf.Clamp01(distance / stoppingDistance);
     }
 
+    #endregion
+    #region Paths
+    private void SetNewRoute(PathRoutesSO newRoutes)
+    {
+        pathRoutes = newRoutes;
+        pathPoints = pathRoutes.GetPatrolRoute(patrolRoute);
+        currentRouteIndex = 0;
+        pathPending = false;
+    }
+
+    private Vector3 setNextRoutePoint()
+    {
+        currentRouteIndex = ++currentRouteIndex % pathPoints.Count;
+        return pathPoints.Count == 0 ?
+            Vector3.zero : SetTarget(pathPoints[currentRouteIndex].position);
+    }
+
+    private Vector3 SetTarget(Vector3 target)
+    {
+        pathPending = true;
+        return target;
+    }
+
+    private bool CheckNextPoint()
+    {
+        return !pathPending && sqrRemainingDistance <= Mathf.Pow(stoppingDistance, 2);
+    }
     #endregion
 
     #region Calculations
