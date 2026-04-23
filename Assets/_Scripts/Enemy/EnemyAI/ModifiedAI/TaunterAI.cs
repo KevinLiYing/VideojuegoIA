@@ -30,13 +30,13 @@ public class TaunterAI : AIBehaviour
 
         var targetDirection = -CalculateTargetDirection(target);
 
-        var steeringDirection = CalculateSteeringDirection(targetDirection, rb);
+        var steeringDirection = CalculateSteeringDirection(targetDirection, rb.linearVelocity);
 
-        var finalDirection = CalculateFinalDirection(steeringDirection, rb);
+        var finalDirection = CalculateFinalDirection(steeringDirection, rb.linearVelocity);
 
         DisplayVectors(rb.linearVelocity, targetDirection, steeringDirection);
 
-        rb.linearVelocity = FinalVelocity(finalDirection);
+        rb.linearVelocity = CalculateFinalVelocity(finalDirection);
 
         // hacemos los cambios
         maxSpeed = originalMaxSpeed;

@@ -48,6 +48,7 @@ public class EnemyAIStateMotor : MonoBehaviour
 
     private void Update()
     {
+        Debug.Log("Estado actual: " + m_state);
         //if(!GameManager.Instance.isPaused)
         UpdateMotor();
     }
@@ -67,6 +68,7 @@ public class EnemyAIStateMotor : MonoBehaviour
     {
         m_state.Destruct();
         m_state = newState;
+        
         m_state.Construct();
     }
 }

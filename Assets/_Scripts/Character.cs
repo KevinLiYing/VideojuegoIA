@@ -45,4 +45,19 @@ public class Character : MonoBehaviour
             SetTagger(false);
         }
     }
+
+    public virtual void TakeDamage(float amount)
+    {
+        currentHealth -= amount;
+
+        if (currentHealth <= 0f)
+        {
+            Die();
+        }
+    }
+
+    protected virtual void Die()
+    {
+        Destroy(gameObject);
+    }
 }

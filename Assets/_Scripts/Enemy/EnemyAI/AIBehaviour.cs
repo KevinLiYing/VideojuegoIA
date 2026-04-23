@@ -1,225 +1,270 @@
 using System;
+using System.Collections;
 using System.Collections.Generic;
 using UnityEngine;
 using Random = UnityEngine.Random;
 
 public class AIBehaviour : MonoBehaviour
 {
-    [SerializeField] private PathRoutesSO pathRoutes;
+    [Header("Follow Path Settings")]
+    [SerializeField] private PathRoutesSO patrolRoutes;
     [SerializeField] private PatrolRoute patrolRoute;
-    public float maxSpeed, steeringMaxSpeed, stoppingDistance = 10.0f;
-    public bool displayVectors = true;
 
-    private List<Transform> pathPoints;
-    private int currentRouteIndex;
-    private float sqrRemainingDistance;
-    private bool pathPending;
+    [Header("Steering")]
+    public float maxSpeed;
+    public float steeringMaxSpeed;
+    public float stoppingDistance;
 
+    [Header("Display Settings")]
+    [SerializeField] private bool areVectorsOnDisplay;
+
+    public Transform[] _pathPoints;
+    public int _currentRouteIndex;
+    public float _sqrRemainingDistance;
+    public bool _pathPending;
 
     private void Start()
     {
-        if (pathRoutes == null) return;
-        SetNewRoute(pathRoutes);
+        SetNewRoute(patrolRoute);
     }
 
-    #region Behaviour
+    #region Behaviours
+
     public virtual void Seek(Vector3 target, Rigidbody rb)
     {
-        var distance = Vector3.Distance(transform.position, target);
+        var targetDirection = CalculateTargetDirection(target);
 
-        float arriveFactor = Arrive(target);
+        var steeringDirection = CalculateSteeringDirection(targetDirection, rb.linearVelocity);
 
-        var targetDirection = CalculateTargetDirection(target) * arriveFactor;
-
-        var steeringDirection = CalculateSteeringDirection(targetDirection, rb);
-
-        var finalDirection = CalculateFinalDirection(steeringDirection, rb);
+        var finalDirection = CalculateFinalDirection(steeringDirection, rb.linearVelocity);
 
         DisplayVectors(rb.linearVelocity, targetDirection, steeringDirection);
 
-        rb.linearVelocity = FinalVelocity(finalDirection);
+        rb.linearVelocity = CalculateFinalVelocity(finalDirection) * Arrive(target);
     }
 
     public virtual void Flee(Vector3 target, Rigidbody rb)
     {
+        var targetDirection = -CalculateTargetDirection(target);
 
-        var targetDirection = - CalculateTargetDirection(target);
+        var steeringDirection = CalculateSteeringDirection(targetDirection, rb.linearVelocity);
 
-        var steeringDirection = CalculateSteeringDirection(targetDirection, rb);
-
-        var finalDirection = CalculateFinalDirection(steeringDirection, rb);
+        var finalDirection = CalculateFinalDirection(steeringDirection, rb.linearVelocity);
 
         DisplayVectors(rb.linearVelocity, targetDirection, steeringDirection);
 
-        rb.linearVelocity = FinalVelocity(finalDirection);
-
+        rb.linearVelocity = CalculateFinalVelocity(finalDirection);
     }
 
-    public void Pursue(Vector3 target, Rigidbody rb, Rigidbody targetRb)
+    public virtual float Arrive(Vector3 target)
     {
-        if (rb.linearVelocity.sqrMagnitude < 0.0001f ||
-                Vector3.Dot(
-                    targetRb.linearVelocity.normalized,
-                    CalculateTargetDirection(target).normalized) < -0.0f)
-        {
+        var sqrDistance = (target - transform.position).sqrMagnitude;
+        if (sqrDistance > Mathf.Pow(stoppingDistance, 2))
+            return 1;
+
+        _pathPending = false;
+
+        return (sqrDistance / Mathf.Pow(stoppingDistance, 2));
+    }
+
+    public virtual void Pursue(Vector3 target, Rigidbody rb, Rigidbody targetRb)
+    {
+        if (rb.linearVelocity.sqrMagnitude < 0.0001f || Vector3.Dot(targetRb.linearVelocity.normalized, CalculateTargetDirection(target).normalized) < -0.8f)
             Seek(target, rb);
-        }
         else
         {
             var currentSqrSpeed = rb.linearVelocity.sqrMagnitude;
             var sqrDistanceToTarget = CalculateTargetDirection(target).sqrMagnitude;
             var prediction = CalculatePrediction(sqrDistanceToTarget, currentSqrSpeed);
 
-            var explicitTarget = CalculatePredictionTarget(target, targetRb, prediction);
+            var explicitTarget = CalculatePredictionExplicitTarget(target, targetRb, prediction);
             Seek(explicitTarget, rb);
         }
     }
 
-    public void Evade(Vector3 target, Rigidbody rb, Rigidbody targetRb)
+    public virtual void Evade(Vector3 target, Rigidbody rb, Rigidbody targetRb)
     {
-        if (rb.linearVelocity.sqrMagnitude < 0.0001f ||
-                Vector3.Dot(
-                    targetRb.linearVelocity.normalized,
-                    CalculateTargetDirection(target).normalized) < -0.0f)
-        {
-            Seek(target, rb);
-        }
+        if (rb.linearVelocity.sqrMagnitude < 0.0001f || Vector3.Dot(targetRb.linearVelocity.normalized, CalculateTargetDirection(target).normalized) < -0.8f)
+            Flee(target, rb);
         else
         {
             var currentSqrSpeed = rb.linearVelocity.sqrMagnitude;
             var sqrDistanceToTarget = CalculateTargetDirection(target).sqrMagnitude;
             var prediction = CalculatePrediction(sqrDistanceToTarget, currentSqrSpeed);
 
-            var explicitTarget = CalculatePredictionTarget(target, targetRb, prediction);
-            Seek(explicitTarget, rb);
+            var explicitTarget = CalculatePredictionExplicitTarget(target, targetRb, prediction);
+            Flee(explicitTarget, rb);
         }
     }
 
-    public void Wander(Rigidbody rb)
+    public virtual void Wander(Rigidbody rb)
     {
         var displacement = CalculateWanderDisplacement(rb.linearVelocity);
 
         var wanderDirection = CalculateWanderDirection(rb.linearVelocity.normalized, displacement);
 
-        var steeringDirection = CalculateSteeringDirection(wanderDirection, rb);
+        var steeringDirection = CalculateSteeringDirection(wanderDirection, rb.linearVelocity);
 
-        var finalDirection = CalculateFinalDirection(steeringDirection, rb);
+        var finalDirection = CalculateFinalDirection(steeringDirection, rb.linearVelocity);
 
         DisplayVectors(rb.linearVelocity, wanderDirection, steeringDirection);
 
-        rb.linearVelocity = FinalVelocity(finalDirection);
+        rb.linearVelocity = CalculateFinalVelocity(finalDirection);
     }
 
-    public void FollowPath(Rigidbody rb)
+    public virtual void FollowPath(Rigidbody rb)
     {
-        var target = pathPoints[currentRouteIndex].position;
+        var target = _pathPoints[_currentRouteIndex].position;
+
+        _sqrRemainingDistance = (target - transform.position).sqrMagnitude;
+
         if (CheckNextPoint())
         {
-            pathPending = false;
-            target = setNextRoutePoint();
+            target = SetNextRoutePoint();
         }
+
+        Vector3 origin = transform.position + Vector3.up * 1f;
+        Vector3 directionToTarget = (target - transform.position).normalized;
+
+        // Debug raycast visual
+        Debug.DrawRay(origin, directionToTarget * 2f, Color.red);
+
+        if (Physics.Raycast(origin, directionToTarget, out RaycastHit hit, 2f))
+        {
+            Debug.DrawLine(origin, hit.point, Color.yellow);
+
+            if (hit.collider.CompareTag("Wall"))
+            {
+                Vector3 avoidDir = Vector3.Cross(hit.normal, Vector3.up);
+
+                if (Vector3.Dot(avoidDir, directionToTarget) < 0)
+                    avoidDir = -avoidDir;
+
+                Vector3 steering = avoidDir * maxSpeed;
+
+                rb.linearVelocity = new Vector3(
+                    steering.x,
+                    rb.linearVelocity.y,
+                    steering.z
+                );
+
+                return;
+            }
+        }
+
         Seek(target, rb);
     }
 
-    public virtual float Arrive(Vector3 target)
+    /*
+    public virtual void FollowPath(Rigidbody rb)
     {
-        float distance = Vector3.Distance(transform.position, target);
+        var target = _pathPoints[_currentRouteIndex].position;
 
-        if (distance > stoppingDistance)
-            return 1f;
+        _sqrRemainingDistance = (target - transform.position).sqrMagnitude;
 
-        return Mathf.Clamp01(distance / stoppingDistance);
+        if (CheckNextPoint())
+        {
+            target = SetNextRoutePoint();
+        }
+
+        Seek(target, rb);
     }
-
+    */
     #endregion
-    #region Paths
-    private void SetNewRoute(PathRoutesSO newRoutes)
+
+    #region Path Functions
+
+    public virtual void InitializePatrolPoints()
     {
-        pathRoutes = newRoutes;
-        pathPoints = pathRoutes.GetPatrolRoute(patrolRoute);
-        currentRouteIndex = 0;
-        pathPending = false;
+        _pathPoints = patrolRoutes.GetPatrolRoute(patrolRoute).ToArray();
     }
 
-    private Vector3 setNextRoutePoint()
+    public virtual void SetNewRoute(PatrolRoute newRoute)
     {
-        currentRouteIndex = ++currentRouteIndex % pathPoints.Count;
-        return pathPoints.Count == 0 ?
-            Vector3.zero : SetTarget(pathPoints[currentRouteIndex].position);
+        patrolRoute = newRoute;
+        _pathPoints = patrolRoutes.GetPatrolRoute(patrolRoute).ToArray();
+        _currentRouteIndex = 0;
     }
 
-    private Vector3 SetTarget(Vector3 target)
+    public virtual Vector3 SetNextRoutePoint()
     {
-        pathPending = true;
+        _currentRouteIndex = ++_currentRouteIndex % _pathPoints.Length;
+        return _pathPoints.Length == 0
+            ? Vector3.zero
+            : SetTarget(_pathPoints[_currentRouteIndex].position);
+    }
+
+    public virtual Vector3 SetTarget(Vector3 target)
+    {
+        _pathPending = true;
         return target;
     }
 
-    private bool CheckNextPoint()
+    public virtual bool CheckNextPoint()
     {
-        return !pathPending && sqrRemainingDistance <= Mathf.Pow(stoppingDistance, 2);
+        return !_pathPending && _sqrRemainingDistance <= Mathf.Pow(stoppingDistance, 2);
     }
+
     #endregion
 
     #region Calculations
-    public Vector3 CalculateTargetDirection(Vector3 target)
+
+    public virtual Vector3 CalculateTargetDirection(Vector3 target)
     {
-        return (target - transform.position).normalized * maxSpeed * Time.fixedDeltaTime;
+        return (target - transform.position).normalized * (maxSpeed * Time.fixedDeltaTime);
     }
 
-    public Vector3 CalculateSteeringDirection(Vector3 targetDirection, Rigidbody rb)
+    public virtual Vector3 CalculateSteeringDirection(Vector3 targetDirection, Vector3 currentVelocity)
     {
-        var steeringDirection = targetDirection - rb.linearVelocity;
+        var steeringDirection = targetDirection - currentVelocity;
 
-        return steeringDirection.sqrMagnitude > Mathf.Pow(steeringMaxSpeed,2) ?
-            steeringDirection.normalized * steeringMaxSpeed :
-            steeringDirection;
+        return steeringDirection.sqrMagnitude > Mathf.Pow(steeringMaxSpeed, 2)
+            ? steeringDirection.normalized * steeringMaxSpeed
+            : steeringDirection;
     }
 
-    public Vector3 CalculateFinalDirection(Vector3 steeringDirection, Rigidbody rb)
-    {
-        return rb.linearVelocity + steeringDirection;
-    }
-
-    public Vector3 FinalVelocity(Vector3 finalDirection)
-    {
-        return finalDirection.sqrMagnitude > Mathf.Pow(maxSpeed, 2) ?
-            finalDirection.normalized * maxSpeed :
-            finalDirection;
-    }
-
-    private float CalculatePrediction(float sqrDistanceToTarget, float currentSqrSpeed)
+    public virtual float CalculatePrediction(float sqrDistanceToTarget, float currentSqrSpeed)
     {
         return sqrDistanceToTarget / currentSqrSpeed;
     }
 
-    private Vector3 CalculatePredictionTarget(Vector3 target, Rigidbody targetRb, float prediction)
+    public virtual Vector3 CalculatePredictionExplicitTarget(Vector3 target, Rigidbody targetRb, float prediction)
     {
         return target + targetRb.linearVelocity * prediction;
     }
 
-    private Vector3 CalculateWanderDisplacement(Vector3 linearVelocity)
+    public virtual Vector3 CalculateWanderDisplacement(Vector3 rbVelocity)
     {
         var randomPoint = Random.insideUnitCircle;
 
-       return Quaternion.LookRotation(linearVelocity) * new Vector3(randomPoint.x, 0, randomPoint.y);
-
-          
+        return Quaternion.LookRotation(rbVelocity) * new Vector3(randomPoint.x, 0, randomPoint.y);
     }
 
-    private Vector3 CalculateWanderDirection(Vector3 circleCenter, Vector3 displacement)
+    public virtual Vector3 CalculateWanderDirection(Vector3 circleCenter, Vector3 displacement)
     {
         return (circleCenter + displacement).normalized * (maxSpeed * Time.fixedDeltaTime);
     }
-    #endregion
 
-    public void DisplayVectors(Vector3 currentVelocity, Vector3 targetDirection, Vector3 steeringDirection)
+    public virtual Vector3 CalculateFinalDirection(Vector3 steeringDirection, Vector3 currentVelocity)
     {
-        if (!displayVectors) return;
+        return currentVelocity + steeringDirection;
+    }
+
+    public virtual Vector3 CalculateFinalVelocity(Vector3 finalDirection)
+    {
+        return finalDirection.sqrMagnitude > Mathf.Pow(maxSpeed, 2)
+            ? finalDirection.normalized * maxSpeed
+            : finalDirection;
+    }
+
+    public virtual void DisplayVectors(Vector3 currentVelocity, Vector3 targetDirection, Vector3 steeringDirection)
+    {
+        if (!areVectorsOnDisplay) return;
 
         Debug.DrawRay(transform.position, currentVelocity, Color.blue);
         Debug.DrawRay(transform.position, targetDirection, Color.green);
-        Debug.DrawRay(transform.position + currentVelocity, steeringDirection, Color.red);
-        
+        Debug.DrawRay(transform.position + currentVelocity, steeringDirection * 10, Color.red);
     }
 
+    #endregion
 }

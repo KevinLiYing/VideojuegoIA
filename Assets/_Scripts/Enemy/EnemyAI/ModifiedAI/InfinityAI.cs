@@ -8,13 +8,13 @@ public class InfinityAI : AIBehaviour
     {
         var targetDirection = CalculateTargetDirection(target);
 
-        var steeringDirection = CalculateSteeringDirection(targetDirection, rb);
+        var steeringDirection = CalculateSteeringDirection(targetDirection, rb.linearVelocity);
 
-        var finalDirection = CalculateFinalDirection(steeringDirection, rb);
+        var finalDirection = CalculateFinalDirection(steeringDirection, rb.linearVelocity);
 
         DisplayVectors(rb.linearVelocity, targetDirection, steeringDirection);
 
-        rb.linearVelocity = FinalVelocity(finalDirection) * Arrive(target);
+        rb.linearVelocity = CalculateFinalVelocity(finalDirection) * Arrive(target);
 
     }
     public override float Arrive(Vector3 target)
